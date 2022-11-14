@@ -1,26 +1,52 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import {
+	memo, useCallback, useEffect, useState, 
+} from 'react';
+import { BoardComponent } from 'components/BoardComponent/BoardComponent';
+import { Board } from 'models/Board';
+import './App.scss';
+import { Player } from 'models/Player';
+import { Colors } from 'models/Colors';
+import { LostFigures } from 'components/LostFigures/LostFigures';
+import { Timer } from 'components/Timer/Timer';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+export const App = memo(() => {
+	const [board, setBoard] = useState<Board>(new Board());
+	const [whitePlayer, setWhitePlayer] = useState(new Player(Colors.WHITE));
+	const [blackPlayer, setBlackPlayer] = useState(new Player(Colors.BLACK));
+	const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
 
-export default App;
+	const restart = useCallback(() => {
+		const newBoard = new Board();
+		newBoard.initCells();
+		newBoard.addFigures();
+		setCurrentPlayer(whitePlayer);
+		setBoard(newBoard);
+	}, [whitePlayer]);
+
+	const swapPlayer = useCallback(() => {
+		setCurrentPlayer(currentPlayer?.color === Colors.WHITE ? blackPlayer : whitePlayer);
+	}, [blackPlayer, currentPlayer?.color, whitePlayer]);
+
+	useEffect(restart, [restart]);
+
+	return (
+		<div className="App">
+			<h2>
+				Current player -
+				{' '}
+				<i>{currentPlayer?.color}</i>
+			</h2>
+			<div className="game">
+				<LostFigures player={Colors.WHITE} figures={board.lostWhite} />
+				<BoardComponent
+					board={board}
+					setBoard={setBoard}
+					currentPlayer={currentPlayer}
+					swapPlayer={swapPlayer}
+				/>
+				<LostFigures player={Colors.BLACK} figures={board.lostBlack} />
+			</div>
+			<Timer currentPlayer={currentPlayer} restart={restart} />
+		</div>
+	);
+});
